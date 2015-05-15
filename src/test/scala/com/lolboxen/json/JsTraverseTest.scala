@@ -1,16 +1,15 @@
 package com.lolboxen.json
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.lolboxen.json.TraverseJsonNode._
-import com.lolboxen.test.UnitSpec
+import com.lolboxen.json.JsFilter._
+import com.lolboxen.json.JsTraverse._
+import org.scalatest.{FlatSpec, Matchers}
 
 import scala.language.postfixOps
 
-class TraverseJsonNodeTest extends UnitSpec {
+class JsTraverseTest extends FlatSpec with Matchers {
 
-  val mapper = new ObjectMapper()
-  val node = mapper.readTree("""{"a":{"b":{"c":10,"d":[1,2,3],"e":[{"a":"1"},{"a":"1","b":1},{"b":"2"}]}}}""")
-  val node2 = mapper.readTree("""{"c": [{"a": {"b": {"a":"1"}, "c": "2"}},{"a": {"b": {"a":"2"}, "c":"1"}}]}""")
+  val node = Json.parse("""{"a":{"b":{"c":10,"d":[1,2,3],"e":[{"a":"1"},{"a":"1","b":1},{"b":"2"}]}}}""")
+  val node2 = Json.parse("""{"c": [{"a": {"b": {"a":"1"}, "c": "2"}},{"a": {"b": {"a":"2"}, "c":"1"}}]}""")
 
   it should "traverse json node when keys exist" in {
     (node \ "a" \ "b" \ "c").asOpt[Int] shouldBe Some(10)
@@ -18,9 +17,9 @@ class TraverseJsonNodeTest extends UnitSpec {
   }
 
   it should "continue to traverse when key isn't found" in {
-    node \ "a" \ "c" shouldBe Empty
-    node \ "a" \ 1 shouldBe Empty
-    node \ "a" \ "d" \ "f" shouldBe Empty
+    node \ "a" \ "c" shouldBe JsTraverse.empty
+    node \ "a" \ 1 shouldBe JsTraverse.empty
+    node \ "a" \ "d" \ "f" shouldBe JsTraverse.empty
   }
 
   it should "filter array" in {
@@ -57,6 +56,6 @@ class TraverseJsonNodeTest extends UnitSpec {
   }
 
   it should "treat object as array" in {
-    TraverseJson(node).* \ 0 \ "b" shouldBe node \ "a" \ "b"
+    JsTraverse(node).* \ 0 \ "b" shouldBe node \ "a" \ "b"
   }
 }
