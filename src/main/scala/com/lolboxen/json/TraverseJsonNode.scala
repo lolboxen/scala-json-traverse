@@ -58,6 +58,11 @@ object TraverseJsonNode {
         case _ => None
       }
     }
+
+    def validate[A](implicit reads: Reads[A]): JsResult[A] = nodes.headOption match {
+      case Some(n) => reads.reads(n)
+      case _ => JsError("path not found")
+    }
   }
 
   case class SimpleFilter(key: String, value: String) extends Filter {
