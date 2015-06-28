@@ -39,7 +39,7 @@ trait DefaultReads {
 
   implicit object BooleanReads extends Reads[Boolean] {
     override def reads(node: JsonNode): JsResult[Boolean] =
-      if (node.isBoolean) JsSuccess(node.asBoolean())
+      if (node.isBoolean || node.isInt) JsSuccess(node.asBoolean())
       else JsError("cannot read as Boolean")
   }
 }
