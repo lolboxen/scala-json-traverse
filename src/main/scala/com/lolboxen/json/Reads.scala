@@ -21,19 +21,19 @@ trait DefaultReads {
 
   implicit object IntegerReads extends Reads[Int] {
     override def reads(node: JsonNode): JsResult[Int] =
-      if (node.canConvertToInt) JsSuccess(node.asInt())
+      if (node.isNumber) JsSuccess(node.asInt())
       else JsError("cannot read as Int")
   }
 
   implicit object LongReads extends Reads[Long] {
     override def reads(node: JsonNode): JsResult[Long] =
-      if (node.canConvertToLong) JsSuccess(node.asLong())
+      if (node.isNumber) JsSuccess(node.asLong())
       else JsError("cannot read as Long")
   }
 
   implicit object DoubleReads extends Reads[Double] {
     override def reads(node: JsonNode): JsResult[Double] =
-      if (node.isDouble) JsSuccess(node.asDouble())
+      if (node.isNumber) JsSuccess(node.asDouble())
       else JsError("cannot read as Double")
   }
 

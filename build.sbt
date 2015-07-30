@@ -1,8 +1,8 @@
 name := "scala-json-traverse"
 
-version := "2.0.2"
+version := "2.0.3"
 
-scalaVersion := "2.11.2"
+scalaVersion := "2.11.7"
 
 libraryDependencies ++= Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % "2.3.3",
