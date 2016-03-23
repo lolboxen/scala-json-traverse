@@ -15,32 +15,27 @@ trait DefaultReads {
 
   implicit object StringReads extends Reads[String] {
     override def reads(node: JsonNode): JsResult[String] =
-      if (node.isValueNode) JsSuccess(node.asText())
-      else JsError("cannot read as String")
+      JsSuccess(node.asText())
   }
 
   implicit object IntegerReads extends Reads[Int] {
     override def reads(node: JsonNode): JsResult[Int] =
-      if (node.isNumber) JsSuccess(node.asInt())
-      else JsError("cannot read as Int")
+      JsSuccess(node.asInt())
   }
 
   implicit object LongReads extends Reads[Long] {
     override def reads(node: JsonNode): JsResult[Long] =
-      if (node.isNumber) JsSuccess(node.asLong())
-      else JsError("cannot read as Long")
+      JsSuccess(node.asLong())
   }
 
   implicit object DoubleReads extends Reads[Double] {
     override def reads(node: JsonNode): JsResult[Double] =
-      if (node.isNumber) JsSuccess(node.asDouble())
-      else JsError("cannot read as Double")
+      JsSuccess(node.asDouble())
   }
 
   implicit object BooleanReads extends Reads[Boolean] {
     override def reads(node: JsonNode): JsResult[Boolean] =
-      if (node.isBoolean || node.isInt) JsSuccess(node.asBoolean())
-      else JsError("cannot read as Boolean")
+      JsSuccess(node.asBoolean())
   }
 }
 
