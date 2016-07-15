@@ -2,6 +2,9 @@ package com.lolboxen.json
 
 import com.fasterxml.jackson.databind.JsonNode
 
+import scala.collection.JavaConverters._
+import scala.collection.mutable
+
 /**
  * Created by trent ahrens on 4/23/15.
  */
@@ -36,6 +39,27 @@ trait DefaultReads {
   implicit object BooleanReads extends Reads[Boolean] {
     override def reads(node: JsonNode): JsResult[Boolean] =
       JsSuccess(node.asBoolean())
+  }
+
+  implicit def mapReads[V](implicit reads: Reads[V]) = new MapReads[V](reads)
+
+  class MapReads[V](reads: Reads[V]) extends Reads[Map[String,V]] {
+    override def reads(node: JsonNode): JsResult[Map[String, V]] = {
+      def loop(map: Map[String,V], seq: Stream[java.util.Map.Entry[String,JsonNode]]): JsResult[Map[String,V]] = {
+        seq match {
+          case entry #:: tails =>
+            reads.reads(entry.getValue) match {
+              case JsSuccess(value) =>
+                loop(map + (entry.getKey -> value), tails)
+              case
+                JsError(reason) => JsError(reason)
+            }
+          case Stream() => JsSuccess(map)
+        }
+      }
+
+      loop(Map.empty, node.fields().asScala.toStream)
+    }
   }
 }
 

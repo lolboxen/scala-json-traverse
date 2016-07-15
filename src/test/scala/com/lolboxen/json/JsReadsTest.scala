@@ -30,4 +30,9 @@ class JsReadsTest extends FlatSpec with Matchers {
     val node = Json.parse("""{"a":"true"}""")
     (node \ "a").asOpt[Boolean] shouldBe Some(true)
   }
+
+  "map reads" must "read map of value type" in {
+    val node = Json.parse("""{"a":"test","b":"test2"}""")
+    node.asOpt[Map[String,String]] shouldBe Some(Map("a" -> "test", "b" -> "test2"))
+  }
 }
