@@ -9,45 +9,32 @@ import scala.language.implicitConversions
 /**
  * Created by trent ahrens on 5/15/15.
  */
-object JsTraverse {
-  val empty = JsTraverse(List.empty)
 
-  def apply(node: JsonNode): JsTraverse = node match {
-    case n: ArrayNode => JsTraverse(n.elements().toList)
-    case n => JsTraverse(List(n))
-  }
+trait JsTraverseImplicits {
+  implicit def toJsTraverse(node: JsonNode): JsTraverse = JsTraverse(node)
+}
+
+object JsTraverse {
+  val empty = JsTraverse(List.empty, JsPath(Nil))
+
+  def apply(node: JsonNode): JsTraverse = apply(Option(node))
 
   def apply(node: Option[JsonNode]): JsTraverse = node match {
-    case Some(n) => JsTraverse(n)
+    case Some(n) => JsTraverse(Seq(n), JsPath(Nil))
     case None => empty
   }
 }
 
-case class JsTraverse(nodes: Seq[JsonNode]) {
-  import JsTraverse._
-
-  def \(key: String): JsTraverse = nodes match {
-    case h :: tail => JsTraverse(Option(h.get(key))).append(JsTraverse(tail) \ key)
-    case _ => empty
-  }
-
-  def \(index: Int) = JsTraverse(nodes.drop(index).take(1))
-
-  def \(filter: JsFilter): JsTraverse = filter(this)
-
-  def * = JsTraverse(nodes.flatMap(n => n.elements()))
-
+case class JsTraverse(nodes: Seq[JsonNode], path: JsPath) {
   def length: Int = nodes.length
 
-  def map[A](f: JsonNode => A): Seq[A] = nodes.map(f)
+  def diff(t: JsTraverse): JsTraverse = JsTraverse(nodes.diff(t.nodes), path)
 
-  def filter(f: JsonNode => Boolean): JsTraverse = JsTraverse(nodes.filter(f))
+  def and(t: JsTraverse): JsTraverse = JsTraverse(nodes.filter(t.nodes.contains(_)), path)
 
-  def diff(t: JsTraverse): JsTraverse = JsTraverse(nodes.diff(t.nodes))
+  def append(t: JsTraverse): JsTraverse = JsTraverse(nodes ++ t.nodes, path)
 
-  def and(t: JsTraverse): JsTraverse = JsTraverse(nodes.filter(t.nodes.contains(_)))
-
-  def append(t: JsTraverse): JsTraverse = JsTraverse(nodes ++ t.nodes)
+  def withPathSegment(segment: PathSegment): JsTraverse = JsTraverse(segment(nodes), path.+(segment))
 
   def as[A](implicit reads: Reads[A]): A = reads.reads(nodes.head) match {
     case JsSuccess(value) => value
@@ -59,6 +46,34 @@ case class JsTraverse(nodes: Seq[JsonNode]) {
       case JsSuccess(value) => Some(value)
       case _ => None
     }
+  }
+
+  def allAs[A](implicit reads: Reads[A]): Seq[A] = {
+    def loop(result: Seq[A], seq: Seq[JsonNode]): Seq[A] =
+      seq match {
+        case head :: tails =>
+          reads.reads(head) match {
+            case JsSuccess(value) => loop(result :+ value, tails)
+            case JsError(reason) => throw new Exception(reason)
+          }
+        case Nil => result
+      }
+
+    loop(Nil, nodes.toList)
+  }
+
+  def allAsOpt[A](implicit reads: Reads[A]): Option[Seq[A]] = {
+    def loop(result: Seq[A], seq: Seq[JsonNode]): Option[Seq[A]] =
+      seq match {
+        case head :: tails =>
+          reads.reads(head) match {
+            case JsSuccess(value) => loop(result :+ value, tails)
+            case JsError(reason) => None
+          }
+        case Nil => Some(result)
+      }
+
+    loop(Nil, nodes.toList)
   }
 
   def validate[A](implicit reads: Reads[A]): JsResult[A] = nodes.headOption match {
