@@ -64,6 +64,24 @@ trait DefaultReads {
     }
   }
 
+  implicit def setReads[V](implicit reads1: Reads[V]) = new Reads[Set[V]] {
+    override def reads(node: JsonNode): JsResult[Set[V]] = {
+      def loop(set: Set[V], elements: Stream[JsonNode]): JsResult[Set[V]] = {
+        elements match {
+          case entry #:: tails =>
+            reads1.reads(entry) match {
+              case JsSuccess(value) =>
+                loop(set + value, tails)
+              case JsError(reason) => JsError(reason)
+            }
+          case Stream() => JsSuccess(set)
+        }
+      }
+
+      loop(Set.empty, node.elements().asScala.toStream)
+    }
+  }
+
   implicit def mapReads[K,V](implicit keyReads: Reads[K], valueReads: Reads[V]) = new MapReads[K,V](keyReads, valueReads)
 
   class MapReads[K,V](keyReads: Reads[K], valueReads: Reads[V]) extends Reads[Map[K,V]] {
