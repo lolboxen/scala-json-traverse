@@ -1,10 +1,9 @@
 package com.lolboxen.json
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.TextNode
-import com.fasterxml.jackson.databind.{ObjectMapper, JsonNode}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 
 /**
  * Created by trent ahrens on 4/23/15.
@@ -36,9 +35,19 @@ trait DefaultReads {
       JsSuccess(node.asLong())
   }
 
+  implicit object BigIntReads extends Reads[BigInt] {
+    override def reads(node: JsonNode): JsResult[BigInt] =
+      JsSuccess(BigInt(node.toString))
+  }
+
   implicit object DoubleReads extends Reads[Double] {
     override def reads(node: JsonNode): JsResult[Double] =
       JsSuccess(node.asDouble())
+  }
+
+  implicit object BigDecimalReads extends Reads[BigDecimal] {
+    override def reads(node: JsonNode): JsResult[BigDecimal] =
+      JsSuccess(BigDecimal(node.toString))
   }
 
   implicit object BooleanReads extends Reads[Boolean] {
