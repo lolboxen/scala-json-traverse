@@ -37,7 +37,7 @@ trait DefaultReads {
 
   implicit object BigIntReads extends Reads[BigInt] {
     override def reads(node: JsonNode): JsResult[BigInt] =
-      JsSuccess(BigInt(node.toString))
+      JsSuccess(parseBigInt(node.asText()))
   }
 
   implicit object DoubleReads extends Reads[Double] {
@@ -47,7 +47,7 @@ trait DefaultReads {
 
   implicit object BigDecimalReads extends Reads[BigDecimal] {
     override def reads(node: JsonNode): JsResult[BigDecimal] =
-      JsSuccess(BigDecimal(node.toString))
+      JsSuccess(parseBigDecimal(node.asText()))
   }
 
   implicit object BooleanReads extends Reads[Boolean] {
@@ -111,6 +111,22 @@ trait DefaultReads {
 
       loop(Map.empty, node.fields().asScala.toStream)
     }
+  }
+
+  private def parseBigInt(s: String): BigInt =
+    if (s.toLowerCase.contains("e"))
+      parseBigDecimal(s).toBigInt()
+    else
+      BigInt(s)
+
+  private def parseBigDecimal(s: String): BigDecimal = {
+    val lows = s.toLowerCase
+    if (lows.contains("e")) {
+      val parts = lows.split("e")
+      BigDecimal(parts(0)) * BigDecimal(10).pow(parts(1).toInt)
+    }
+    else
+      BigDecimal(s)
   }
 }
 
