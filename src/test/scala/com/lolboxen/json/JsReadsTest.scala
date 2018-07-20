@@ -48,7 +48,12 @@ class JsReadsTest extends FlatSpec with Matchers {
   }
 
   "bigint reads" must "read scientific notation" in {
-    val node = Json.parse("""{"a":"5.2349851983E20"}""")
-    (node \ "a").asOpt[BigInt] shouldBe Some(BigInt("523498519830000000000"))
+    val node = Json.parse(""""5.2349851983E20"""")
+    Reads.BigIntReads.reads(node) shouldBe JsSuccess(BigInt("523498519830000000000"))
+  }
+
+  "bigint reads" must "return failure when it cannot parse" in {
+    val node = Json.parse(""""abc"""")
+    Reads.BigIntReads.reads(node) shouldBe JsError("cannot read bigint value `abc`")
   }
 }

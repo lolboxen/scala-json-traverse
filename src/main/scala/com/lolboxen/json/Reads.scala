@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.TextNode
 
 import scala.collection.JavaConverters._
+import scala.util.Try
 
 /**
  * Created by trent ahrens on 4/23/15.
@@ -37,7 +38,7 @@ trait DefaultReads {
 
   implicit object BigIntReads extends Reads[BigInt] {
     override def reads(node: JsonNode): JsResult[BigInt] =
-      JsSuccess(parseBigInt(node.asText()))
+      parseBigInt(node.asText())
   }
 
   implicit object DoubleReads extends Reads[Double] {
@@ -47,7 +48,7 @@ trait DefaultReads {
 
   implicit object BigDecimalReads extends Reads[BigDecimal] {
     override def reads(node: JsonNode): JsResult[BigDecimal] =
-      JsSuccess(parseBigDecimal(node.asText()))
+      parseBigDecimal(node.asText())
   }
 
   implicit object BooleanReads extends Reads[Boolean] {
@@ -113,31 +114,45 @@ trait DefaultReads {
     }
   }
 
-  private def parseBigInt(s: String): BigInt =
+  private def parseBigInt(s: String): JsResult[BigInt] =
     if (s.toLowerCase.contains("e"))
-      parseBigDecimal(s).toBigInt()
+      parseBigDecimal(s).map(_.toBigInt())
     else
-      BigInt(s)
+      Try(BigInt(s)).toOption match {
+        case Some(bigint) => JsSuccess(bigint)
+        case None => JsError(s"cannot read bigint value `$s`")
+      }
 
-  private def parseBigDecimal(s: String): BigDecimal = {
+  private def parseBigDecimal(s: String): JsResult[BigDecimal] = {
     val lows = s.toLowerCase
     if (lows.contains("e")) {
       val parts = lows.split("e")
-      BigDecimal(parts(0)) * BigDecimal(10).pow(parts(1).toInt)
+      (Try(BigDecimal(parts(0))).toOption,Try(BigDecimal(10).pow(parts(1).toInt)).toOption) match {
+        case (a, b) if a.isEmpty || b.isEmpty => JsError(s"cannot read bigdecimal value `$s`")
+        case (Some(a), Some(b)) => JsSuccess(a * b)
+      }
     }
     else
-      BigDecimal(s)
+      Try(BigDecimal(s)).toOption match {
+        case Some(bigdec) => JsSuccess(bigdec)
+        case None => JsError(s"cannot read bigdecimal value `$s`")
+      }
   }
 }
 
 sealed trait JsResult[+A] {
   def get: A
+  def map[B](f: A => B): JsResult[B]
 }
 
 case class JsSuccess[A](value: A) extends JsResult[A] {
   override def get: A = value
+
+  override def map[B](f: A => B): JsResult[B] = JsSuccess(f(value))
 }
 
 case class JsError(reason: String) extends JsResult[Nothing] {
   override def get: Nothing = throw new Exception("JsError.get")
+
+  override def map[B](f: Nothing => B): JsResult[B] = this
 }
