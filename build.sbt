@@ -1,11 +1,10 @@
 name := "scala-json-traverse"
 
-version := "3.0.3"
+version := "3.0.4"
 
-scalaVersion := "2.11.7"
+crossScalaVersions := Seq("2.11.7", "2.12.10")
 
 libraryDependencies ++= Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % "2.3.3",
-  "org.scalatest" %% "scalatest" % "2.2.1" % "test",
-  "org.scalamock" %% "scalamock-scalatest-support" % "3.2" % "test"
+  "org.scalatest" %% "scalatest" % "3.0.8" % "test"
 )
